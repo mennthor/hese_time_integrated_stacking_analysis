@@ -42,12 +42,12 @@ fpath = os.path.join(inpath, "bg_trials.json.gz")
 with gzip.open(fpath) as fp:
     trials = json.load(fp)
     print("- Loaded combined trials from:\n    {}".format(fpath))
-ts = trials["ts"]
+ts = np.array(trials["ts"])
+ts[ts <= 0] = 0.
 
 # Create PDF object and scan the best threshold
 print("- Scanning best threshold")
-emp_dist = stats.ExpTailEmpiricalDist(ts, nzeros=0,
-                                      thresh=np.amax(ts))
+emp_dist = stats.ExpTailEmpiricalDist(ts, nzeros=0, thresh=np.amax(ts))
 # Scan in a range with still good statistics, but leave the really good
 # statistics part to the empirical PDF
 lo, hi = emp_dist.ppf(q=100. * stats.sigma2prob([2., 4.]))
