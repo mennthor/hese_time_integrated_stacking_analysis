@@ -75,7 +75,7 @@ for key in sample_names:
     logE_bins = np.linspace(
         np.floor(np.amin(mc["logE"])), np.ceil(np.amax(mc["logE"])), 30)
 
-    # Get the official binnings from skylab
+    # Get the official binnings from skylab instead
     if use_skylab_bins:
         sindec_bins = key2set[key].sinDec_bins(key2skylab[key])
         logE_bins = key2set[key].energy_bins(key2skylab[key])
@@ -84,7 +84,10 @@ for key in sample_names:
         # Watch the order of the bins in the list!
         "twodim_bins": [logE_bins.tolist(), sindec_bins.tolist()],
         "allow_empty": True,
-        "kernel": 1.,
+        "kernel": 1.,              # Smoothing kernel width for energy PDF
+        "seed": 2.,                # gamma index seed
+        "bounds": [1., 4.],        # gamma index bounds
+        "fill_method": "classic",
         }
 
     # :: LLH ::
