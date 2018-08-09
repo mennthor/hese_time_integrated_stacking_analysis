@@ -28,7 +28,7 @@ args = parser.parse_args()
 testmode = args.testmode
 use_skylab_bins = args.use_skylab_bins
 
-job_creator = dagman.DAGManJobCreator(mem=5)
+job_creator = dagman.DAGManJobCreator(mem=8)
 job_name = "hese_stacking"
 
 script = os.path.join(PATHS.repo, "05-bg_trials.py")

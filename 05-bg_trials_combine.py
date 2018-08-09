@@ -56,7 +56,7 @@ if len(files) > 0:
     trials = {
         "ns": [],
         "ts": [],
-        "spectrum": None,
+        "gamma": [],
         "rnd_seed": [],
         "ntrials": 0,
         "ntrials_per_batch": [],
@@ -67,10 +67,10 @@ if len(files) > 0:
             trial_i = json.load(infile)
         trials["ns"] += trial_i["ns"]
         trials["ts"] += trial_i["ts"]
+        trials["gamma"] += trial_i["gamma"]
         trials["ntrials"] += trial_i["ntrials"]
         trials["rnd_seed"].append(trial_i["rnd_seed"])
         trials["ntrials_per_batch"].append(trial_i["ntrials"])
-    trials["spectrum"] = trial_i["spectrum"]
     # Save it
     fpath = os.path.join(outpath, "bg_trials.json.gz")
     if dry_mode:

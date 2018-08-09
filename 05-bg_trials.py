@@ -16,7 +16,6 @@ from time import time
 
 from skylab.ps_llh import PointSourceLLH, MultiPointSourceLLH
 from skylab.llh_models import EnergyLLH
-from skylab.spectral_models import PowerLaw
 
 from _paths import PATHS
 import _loader
@@ -62,21 +61,18 @@ if not os.path.isdir(outpath):
     os.makedirs(outpath)
 
 
-# Extract source info, use the same fixed spectral index -2 for all
+# Extract source info
 sources = _loader.source_list_loader()
 nsrcs = len(sources)
-fixed_gamma = 2.
-# Concrete norm shouldn't matter here, weights get normalized
-fixed_spectrum = PowerLaw(A=1, gamma=fixed_gamma, E0=1)
-
 ra = [src["ra"] for src in sources]
 dec = [src["dec"] for src in sources]
 # Theo weights need to be normalized manually in skylab?
 w = np.ones(nsrcs, dtype=float) / float(nsrcs)
 
 # Create the multi LLH
-# multillh = MultiPointSourceLLH(seed=rnd_seed, ncpu=40)  #  For local testing
-multillh = MultiPointSourceLLH(seed=rnd_seed, ncpu=4)
+# multillh = MultiPointSourceLLH(seed=rnd_seed, ncpu=40)  # For local testing
+# multillh = MultiPointSourceLLH(seed=rnd_seed, ncpu=4)
+multillh = MultiPointSourceLLH(seed=rnd_seed, ncpu=1)
 
 livetimes = _loader.livetime_loader()
 for name, livetime in sorted(livetimes.items()):
@@ -87,8 +83,7 @@ for name, livetime in sorted(livetimes.items()):
 
     # Setup the energy LLH model with fixed index, only ns is fitted
     settings = _loader.settings_loader(name, skylab_bins=use_skylab_bins)[name]
-    llh_model = EnergyLLH(spectrum=fixed_spectrum,
-                          **settings["llh_model_opts"])
+    llh_model = EnergyLLH(**settings["llh_model_opts"])
     llh = PointSourceLLH(exp, mc, livetime, llh_model, scramble=True,
                          **settings["llh_opts"])
 
@@ -109,7 +104,7 @@ print(":: Done. {} ::".format(sec2str(time() - _t0)))
 out = {
     "ts": trials["TS"].tolist(),
     "ns": trials["nsources"].tolist(),
-    "spectrum": trials["spectrum"][0],
+    "gamma": trials["gamma"].tolist(),
     "rnd_seed": rnd_seed,
     "ntrials": ntrials,
     }
