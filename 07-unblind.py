@@ -4,13 +4,19 @@
 Unblind held back ontime data.
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 import gc  # Manual garbage collection
 import os
 import gzip
 import json
 import argparse
 import numpy as np
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    print("If you want fancy status bars: `pip install --user tqdm` ;)")
+    tqdm = iter
 
 from skylab.ps_llh import PointSourceLLH, MultiPointSourceLLH
 from skylab.llh_models import EnergyLLH
@@ -29,11 +35,19 @@ def dict_print(d):
 
 
 parser = argparse.ArgumentParser(description="hese_stacking")
+parser.add_argument("--n_unblindings", type=int, default=1,
+                    help="Do this many unblindings in a row, default is 1.")
 parser.add_argument("--really_unblind", action="store_true")
 parser.add_argument("--use_skylab_bins", action="store_true", default=False)
 args = parser.parse_args()
+n_unblindings = args.n_unblindings
 really_unblind = args.really_unblind
 use_skylab_bins = args.use_skylab_bins
+
+if n_unblindings < 1:
+    raise ValueError("'n_unblindings' must give an int > 0.")
+else:
+    print("Doing {:d} unblindings in a row.".format(n_unblindings))
 
 if not really_unblind:
     print("## Not really unblinding, events get scrambled!   ##")
@@ -55,10 +69,6 @@ check_dir(outpath, ask=False)
 # Extract source info, use the same fixed spectral index -2 for all
 sources = _loader.source_list_loader()
 nsrcs = len(sources)
-fixed_gamma = 2.
-# Concrete norm shouldn't matter here, weights get normalized
-fixed_spectrum = PowerLaw(A=1, gamma=fixed_gamma, E0=1)
-
 ra = [src["ra"] for src in sources]
 dec = [src["dec"] for src in sources]
 # Theo weights need to be normalized manually in skylab?
@@ -77,8 +87,7 @@ for name, livetime in sorted(livetimes.items()):
 
     # Setup the energy LLH model with fixed index, only ns is fitted
     settings = _loader.settings_loader(name, skylab_bins=use_skylab_bins)[name]
-    llh_model = EnergyLLH(spectrum=fixed_spectrum,
-                          **settings["llh_model_opts"])
+    llh_model = EnergyLLH(**settings["llh_model_opts"])
     llh = PointSourceLLH(exp, mc, livetime, llh_model, scramble=scramble,
                          **settings["llh_opts"])
 
@@ -97,12 +106,15 @@ with gzip.open(pdf_path) as fp:
 result = {
     "ts": [],
     "ns": [],
+    "gamma": [],
     "pval": [],
     "sigma": [],
+    "n_unblindings": n_unblindings,
+    "scrambled": scramble,
     }
 
-for i in range(1000):
-    # Get the unblinded result
+# Get the unblinded result(s)
+for i in tqdm(range(n_unblindings)):
     bf_ts, bf_params = multillh.fit_source(
         src_ra=ra, src_dec=dec, src_w=w, scramble=scramble)
 
@@ -112,26 +124,30 @@ for i in range(1000):
 
     result["ts"].append(bf_ts)
     result["ns"].append(bf_params["nsources"])
+    result["gamma"].append(bf_params["gamma"])
     result["pval"].append(pval[0])
     result["sigma"].append(sigma[0])
-    # result = {
-    #     "ts": bf_ts,
-    #     "ns": bf_params["nsources"],
-    #     "pval": pval[0],
-    #     "sigma": sigma[0],
-    #     }
+
 # ##############################################################################
 
-ts = np.array(result["ts"])
-print("Number of zero trials: {}".format(np.sum(ts == 0)))
-print("Perc. of zero trials : {:.2%}".format(np.sum(ts == 0) / float(len(ts))))
-print("Number of trials > 1 : {}".format(np.sum(ts > 1)))
-
 # Print result
-# dict_print(result)
+if n_unblindings == 1:
+    for key, val in result.items():
+        try:
+            result[key] = val[0]
+        except:
+            pass
+else:
+    ts = np.array(result["ts"])
+    nzero_trials = np.sum(ts == 0)
+    print("Number of zero trials: {}".format(nzero_trials))
+    print("Perc. of zero trials : {:.2%}".format(nzero_trials / n_unblindings))
+    print("Number of trials > 1 : {}".format(np.sum(ts > 1)))
+
+dict_print(result)
 
 # Save as JSON
-# fname = os.path.join(outpath, "result.json")
-# with open(fname, "w") as fp:
-#     json.dump(result, fp=fp, indent=1)
-#     print("Saved to:\n  {}".format(fname))
+fname = os.path.join(outpath, "result.json")
+with open(fname, "w") as fp:
+    json.dump(result, fp=fp, indent=1)
+    print("Saved to:\n  {}".format(fname))
