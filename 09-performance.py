@@ -146,7 +146,7 @@ inj_opts = {
 
 sig_injs = {}
 livetimes = _loader.livetime_loader()
-for name, livetime in sorted(livetimes.items())[:2]:
+for name, livetime in sorted(livetimes.items()):
     print("\n# Setting up LLH for sample '{}'".format(name))
     # Get exp data and MC
     exp = _loader.exp_data_loader(name)[name]
