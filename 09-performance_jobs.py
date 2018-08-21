@@ -43,7 +43,7 @@ else:
 if testmode:
     ntrials_per_job = 100
 else:
-    ntrials_per_job = int(2e4)
+    ntrials_per_job = int(1e4)
 
 # Set mu scan range (explored by trial and error)
 start, stop, step = 1., 200., 1.
