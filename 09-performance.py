@@ -114,8 +114,8 @@ if use_skylab_bins:
 else:
     outpath = os.path.join(PATHS.data, "performance")
 
-if not os.path.isdir(outpath):
-    os.makedirs(outpath)
+#if not os.path.isdir(outpath):
+#    os.makedirs(outpath)
 
 # Extract source info
 sources = _loader.source_list_loader()
@@ -227,7 +227,8 @@ out = {
     "E0_inj": E0_inj,
     }
 
-_fname = os.path.join(outpath, "performance_mu={:.3f}.json.gz".format(mu))
+# For proper sorting prepend zeros in output
+_fname = os.path.join(outpath, "performance_mu={:5.1f}.json.gz".format(mu))
 with gzip.open(_fname, "w") as fp:
     json.dump(out, fp=fp, indent=1)
     print("Saved to:\n  {}".format(_fname))

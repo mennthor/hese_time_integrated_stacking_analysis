@@ -43,10 +43,14 @@ else:
 if testmode:
     ntrials_per_job = 100
 else:
-    ntrials_per_job = int(1e4)
+    # ntrials_per_job = int(1e4)
+    ntrials_per_job = 5000
 
-# Set mu scan range (explored by trial and error)
-start, stop, step = 1., 200., 1.
+# Set mu scan range
+# Explored by trial and error from examining chi2 fit for disc. pot.
+start, stop, step = 1., 500., 5.
+# For a pretty Neyman plane, you might want 1, 100, 1 for tighter mu bins
+# and 1e4 trials per mu
 mu = np.arange(start, stop + step, step)
 
 # Set physics parameters
